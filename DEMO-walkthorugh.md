@@ -2,10 +2,12 @@
 ```bash
 circom circom/main.circom --r1cs --wasm --sym
 ```
-Compiling the Circuit: This command compiles the main.circom file into several output files:
-    - main.r1cs: The circuit's Rank-1 Constraint System (R1CS), representing the circuit as a system of equations.
-    - main.wasm: WebAssembly code for generating witnesses.
-    - main.sym: A symbol file for debugging and understanding the constraint system.
+> compiling the circuit: This command compiles the main.circom file into several output files:
+>    - main.r1cs: The circuit's Rank-1 Constraint System (R1CS), representing the circuit as a system of equations.
+>    - main.wasm: WebAssembly code for generating witnesses.
+>    - main.sym: A symbol file for debugging and understanding the constraint system.
+
+
 ## Powers of Tau Ceremony
 
 ### Start the Ceremony:
