@@ -1,119 +1,126 @@
-# plonk and groth16 demo
-
-
-### compile the circuit:
-
+## Compile the Circuit
 ```bash
 circom circom/main.circom --r1cs --wasm --sym
 ```
+> compiling the circuit: this command compiles the main.circom file into several output files:
+>    - main.r1cs: the circuit's rank-1 constraint system (r1cs), representing the circuit as a system of equations.
+>    - main.wasm: webassembly code for generating witnesses.
+>    - main.sym: a symbol file for debugging and understanding the constraint system.
 
-### powers of tau ceremony
 
-start powers of tau ceremony:
+## Powers of Tau Ceremony
+
+#### Start the Ceremony:
 ```bash
 snarkjs powersoftau new bn128 16 pot16_0000.ptau -v
 ```
+> starting the ceremony: this starts the powers of tau ceremony using the bn128 elliptic curve with 2^16 constraints. the output is the initial powers of tau file, pot16_0000.ptau, which will be the basis for further contributions.
 
-contribute to powers of tau ceremony:
+#### Contribute to the Ceremony:
+
 ```bash
 snarkjs powersoftau contribute pot16_0000.ptau pot16_0001.ptau --name="magaiba so gentle" -v
 ```
+> this command contributes additional entropy to the powers of tau file. the new file pot16_0001.ptau contains this additional contribution.
 
-prepare powers of tau setup for phase 2 (circuit-specific phase):
+## Prepare for Circuit-Specific Phase (Phase 2):
+
 ```bash
 snarkjs powersoftau prepare phase2 pot16_0001.ptau pot16_final.ptau -v
 ```
 
-### GROTH16 setup:
+> this prepares the powers of tau file for use in the circuit-specific setup (phase 2). the output pot16_final.ptau is ready for use in either groth16 or plonk setups.
 
-perform a trusted setup for Groth16 (circuit-specific):
+## Groth16 Setup:
 ```bash
 snarkjs groth16 setup main.r1cs pot16_final.ptau circuit_groth16_0000.zkey
 ```
 
-contribute to phase2 cerem of groth16:
-```bash
-snarkjs zkey contribute circuit_groth16_0000.zkey circuit_groth16_0001.zkey --name="roberto" -v
-```
+> this command uses r1cs and ptau to create a zkey specifically for groth16.
 
-last contribution to phase2 cerem of groth16:
+#### Contribute to Phase 2 (Groth16):
+
 ```bash
 snarkjs zkey contribute circuit_groth16_0001.zkey circuit_groth16_final.zkey --name="ricardo" -v
 ```
+> similar to the powers of tau phase, additional entropy is added to the zero-knowledge key in the circuit-specific phase. the result is a more secure key (circuit_groth16_0001.zkey).
 
-generate groth16 verification key:
-```bash 
+#### generate groth16 verification key:
+
+```bash
 snarkjs zkey export verificationkey circuit_groth16_final.zkey groth16_verification_key.json
 ```
+> this command extracts the verification key from the final groth16 zero-knowledge key.
 
-### PLONK setup:
+### PLONK Setup
+
 ```bash
 snarkjs plonk setup main.r1cs pot16_final.ptau circuit_plonk_final.zkey
 ```
+> plonk: this command uses the r1cs and the finalized powers of tau file to create a zkey (circuit_plonk_final.zkey) for plonk. unlike groth16, plonk doesn't require a circuit-specific trusted setup, making this process simpler.
 
-Groth16 requires a trusted ceremony for each circuit. PLONK and FFLONK do not require it, it's enough with the powers of tau ceremony which is universal.
-
+### Generate PLONK Verification Key:
 
 ```bash
 snarkjs zkey export verificationkey circuit_plonk_final.zkey plonk_verification_key.json
 ```
 
+> similar to groth16, this command extracts the verification key from the plonk zkey.
 
-### generate proof (groth16):
 
-Create a witness using the input.json file:
+## Generate Proofs
+
 ```bash
 node main_js/generate_witness.js main_js/main.wasm input.json witness.wtns
 ```
+> this command uses the webassembly file (main.wasm) and input values (input.json) to generate a witness (witness.wtns). the witness contains all intermediate values needed to create a zk proof.
 
-Generate a proof with the previously created witness:
+### Generate Groth16 Proof:
+
 ```bash
 snarkjs groth16 prove circuit_groth16_final.zkey witness.wtns groth16_proof.json public.json
 ```
 
-### verify proof (groth16):
-Verify the proof using the public inputs and the verification key.
+> this command generates a zk proof (groth16_proof.json) using the final groth16 zkey and witness. the public inputs and outputs are stored in public.json.
+
+
+### Generate PLONK Proof:
+```bash
+snarkjs plonk prove circuit_plonk_final.zkey witness.wtns plonk_proof.json public.json
+```
+> similar to groth16, this command generates a zk proof (plonk_proof.json) using the plonk zkey and witness. the public inputs and outputs are stored in public.json.
+
+
+## Verify Proofs
+
+### Verify Groth16 Proof:
 ```bash
 snarkjs groth16 verify groth16_verification_key.json public.json groth16_proof.json
 ```
 
-### generate proof (PLONK):
-Similar to Groth16, generate the witness.
-```bash
-node main_js/generate_witness.js main_js/main.wasm input.json witness.wtns
-```
+> this command verifies the groth16 proof using the verification key and the public inputs/outputs.
 
-Generate a proof with the previously created witness:
-```bash
-snarkjs plonk prove circuit_plonk_final.zkey witness.wtns plonk_proof.json public.json
-```
 
-### Verify Proof (PLONK)
+### Verify PLONK Proof:
 
-Verify the proof using the public inputs and the verification key.
 ```bash
 snarkjs plonk verify plonk_verification_key.json public.json plonk_proof.json
 ```
+> this command verifies the plonk proof in the same way as the groth16 proof, ensuring that the proof is valid.
 
-### BONUS TRACK
+## Generate Solidity Verifiers
 
-+ generate plonk solidity verifier:
+#### Plonk
 ```bash
 snarkjs zkey export solidityverifier circuit_plonk_final.zkey plonk_verifier.sol
 ```
 
-+ generate groth16 solidity verifier:
+#### Groth16
 ```bash
 snarkjs zkey export solidityverifier circuit_groth16_final.zkey groth16_verifier.sol
 ```
 
-+ deploy verifier on-chain
-
-+ verify proofs on-chain
-
-
-
-### decode witness to JSON
-```sh
+## Decode Witness to JSON (Optional)
+```bash
 snarkjs wtns export json witness.wtns witness.json
 ```
